@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Custom Password Game</title>
+</head>
+<body>
+    <div id="logo" class="logo">
+        NEAL.FUN
+    </div>
+
+    <h1 class="title">
+        * The Custom Password Game
+    </h1>
+
+    <div class="password-wrapper">
+        <div class="password-box">
+            <label class="password-label">Please choose a password</label>
+            <div id="password-area" class="password-area" contenteditable="true" translate="no" tabindex="0" spellcheck="false" style="font-family: monospace; font-size: 28px;color: black;background-color: white;"></div>
+            <label id="password-length" class="password-length" style="opacity: 0;"></label>
+        </div>
+        <div id="toolbar" class="toolbar" style="display: none;">
+            <button id="bold" style="display: none;">Bold</button>
+            <button id="italic" style="display: none;">Italic</button>
+            <button id="underline" style="display: none;">Underline</button>
+            <button id="strike-through" style="display: none;">Strike Through</button>
+            <button id="overline" style="display: none;">Overline</button>
+            <select id="font-size" style="display: none;">
+                <option value="0px">0px</option>
+                <option value="1px">1px</option>
+                <option value="4px">4px</option>
+                <option value="9px">9px</option>
+                <option value="12px">12px</option>
+                <option value="16px">16px</option>
+                <option value="25px">25px</option>
+                <option value="28px">28px</option>
+                <option value="32px">32px</option>
+                <option value="36px">36px</option>
+                <option value="49px">49px</option>
+                <option value="64px">64px</option>
+                <option value="81px">81px</option>
+            </select>
+            <select id="font-family" style="display: none;">
+                <option value="Monospace">Monospace</option>
+                <option value="Arial">Arial</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Courier New">Courier New</option>
+            </select>
+            <select id="text-color" style="display: none;">
+                <option value="#ffffff">White</option>
+                <option value="#000000">Black</option>
+                <option value="#a52a2a">Brown</option>
+                <option value="#d2691e">Chocolate</option>
+                <option value="#8b0000">Dark Red</option>
+                <option value="#ff0000">Red</option>
+                <option value="#dc143c">Crimson</option>
+                <option value="#ffa500">Orange</option>
+                <option value="#ffd700">Gold</option>
+                <option value="#ffff00">Yellow</option>
+                <option value="#00ff00ff">Lime</option>
+                <option value="#7cfc00ff">Lawn Green</option>
+                <option value="#008000ff">Green</option>
+                <option value="#00ffffff">Aqua</option>
+                <option value="#40e0d0ff">Turquoise</option>
+                <option value="#87ceebff">Sky Blue</option>
+                <option value="#0000ffff">Blue</option>
+                <option value="#ee82eeff">Violet</option>
+                <option value="#ffc0cbff">Pink</option>
+                <option value="#ff69b4ff">Hot Pink</option>
+                <option value="#ff00ffff">Magenta</option>
+                <option value="#dda0ddff">Plum</option>
+                <option value="#800080ff">Purple</option>
+                <option value="#00000000">Transpaerent</option>
+            </select>
+            <select id="background-color" style="display: none;">
+                <option value="#00000000">Transpaerent</option>
+                <option value="#ffffffff">White</option>
+                <option value="#000000ff">Black</option>
+                <option value="#a52a2aff">Brown</option>
+                <option value="#d2691eff">Chocolate</option>
+                <option value="#8b0000ff">Dark Red</option>
+                <option value="#ff0000ff">Red</option>
+                <option value="#dc143cff">Crimson</option>
+                <option value="#ffa500ff">Orange</option>
+                <option value="#ffd700ff">Gold</option>
+                <option value="#ffff00ff">Yellow</option>
+                <option value="#00ff00ff">Lime</option>
+                <option value="#7cfc00ff">Lawn Green</option>
+                <option value="#008000ff">Green</option>
+                <option value="#00ffffff">Aqua</option>
+                <option value="#40e0d0ff">Turquoise</option>
+                <option value="#87ceebff">Sky Blue</option>
+                <option value="#0000ffff">Blue</option>
+                <option value="#ee82eeff">Violet</option>
+                <option value="#ffc0cbff">Pink</option>
+                <option value="#ff69b4ff">Hot Pink</option>
+                <option value="#ff00ffff">Magenta</option>
+                <option value="#dda0ddff">Plum</option>
+                <option value="#800080ff">Purple</option>
+            </select>
+          </div>
+    </div>
+</body>
+</html>

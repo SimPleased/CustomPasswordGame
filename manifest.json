@@ -1,0 +1,13 @@
+{
+    "name": "Custom Password Rules",
+    "description": "An extension to allow you to add your own rules to neal.fun",
+    "version": "0.0.1",
+    "manifest_version": 3,
+    "content_scripts": [
+        {
+            "all_frames": true,
+            "matches": ["https://neal.fun/password-game/*"],
+            "js": ["app.js"]
+        }
+    ]
+}

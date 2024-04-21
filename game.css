@@ -1,0 +1,93 @@
+:root {
+    position: relative;
+    background-color: #fffae9;
+}
+
+.logo {
+    position: absolute;
+    font-family: cursive;
+    font-size: 30px;
+    left: 10px;
+    top: 0;
+    transition: all 0.2s ease-in-out;
+}
+
+.logo:hover {
+    font-size: 32px;
+    left: 9px;
+    top: -1px;
+}
+
+.title {
+    margin-top: 80px;
+    margin-left: 50%;
+    text-align: center;
+    transform: translateX(-50%);
+}
+
+.password-wrapper {
+    max-width: 485px;
+    margin: 167px auto 60px;
+}
+
+.password-box {
+    position: relative;
+}
+
+.password-label {
+    font-size: 20px;
+}
+
+.password-area {
+    width: 100%;
+    padding: 15px;
+    border: 1px solid #9d9d9d;
+    border-radius: 10px;
+    min-height: 64px;
+    background-color: white;
+    transition: border-color .15s ease-in-out, border-radius .1s ease-in-out;
+}
+
+.password-area:focus {
+    border-color: black;
+}
+
+.password-length {
+    position: absolute;
+    top: 50%;
+    right: -50px;
+    transform: translate(100%, -50%);
+    font-size: 24px;
+    transition: opacity .5s ease-in-out;
+    margin-top: 20px;
+}
+
+.toolbar {
+    width: 100%;
+    background-color: white;
+    padding: 5px 15px;
+    border-radius: 0 0 10px 10px;
+    border: 1px solid black;
+    border-top: none;
+    display: inline-flex !important;
+    flex-wrap: wrap;
+
+}
+
+.toolbar * {
+    color: black;
+    background-color: white;
+    border: 1px solid #b3b3b3;
+    font-size: 20px;
+    padding: 5px 11px;
+    border-radius: 5px;
+    box-shadow: 2px 2px 2px 0 rgba(0, 0, 0, .05);
+    transition: background-color .15s linear;
+    cursor: pointer;
+    margin: 5px;
+}
+
+.toolbar .active {
+    background-color: black;
+    color: white;
+}
