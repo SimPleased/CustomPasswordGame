@@ -33,26 +33,13 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
-const getSelectionOrCaretPosition = () => {
-    const selection = window.getSelection();
-    let range;
-  
-    if (selection.rangeCount > 0) {
-      range = selection.getRangeAt(0);
-    } else {
-      range = document.createRange();
-      range.setStart(passwordArea, 0);
-      range.setEnd(passwordArea, 0);
-    }
-  
-    return range;
-}
-
 const getStyle = (style) => {
-    const range = getSelectionOrCaretPosition();
-    const node = range.startContainer;
-    const parentNode = node.nodeType === Node.TEXT_NODE ? node.parentNode : node;
-    return window.getComputedStyle(parentNode).getPropertyValue(style);
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+        const node = selection.getRangeAt(0).startContainer;
+        const parentNode = node.nodeType === Node.TEXT_NODE ? node.parentNode : node;
+        return window.getComputedStyle(parentNode)[style];
+    }
 }
 
 const setSelectOptionIndex = (selectElement, value) => {
@@ -62,6 +49,61 @@ const setSelectOptionIndex = (selectElement, value) => {
         }
     }
 }
+
+const cullElements = (element) => {
+    const children = [element.childNodes][0];
+    let elementText = '';
+
+    children.forEach(child => {
+        if (child.nodeType === Node.TEXT_NODE) {
+            elementText += child.textContent;
+        } else {
+            cullElements(child)
+        }
+    });
+    
+    if (element !== passwordArea && elementText.length === 0) {
+        if (element.children.length === 1) {
+            mergeElement(element);
+        } else if (children.length === 0) {
+            element.remove()
+        }
+    }
+}
+
+const mergeElement = (element) => {
+    const child = element.children[0];
+    const childStyles = child.style;
+
+    for (let i = 0; i < childStyles.length; i++) {
+        const styleName = childStyles[i];
+        const styleValue = childStyles.getPropertyValue(styleName);
+
+        if (styleValue !== '') {
+            if (styleName === 'text-decoration-line' && element.style.textDecorationLine) {
+            const mergedStyleArr = new Set([
+                ...element.style.textDecorationLine.split(' '),
+                ...styleValue.split(' '),
+            ]);
+            element.style.textDecorationLine = Array.from(mergedStyleArr).join(' ');
+            } else {
+            element.style[styleName] = styleValue;
+            }
+        }
+    }
+
+    const selection = window.getSelection();
+
+    element.innerHTML = child.innerHTML;
+
+    const range = document.createRange();
+    const startNode = element.firstChild;
+    const endNode = element.lastChild;
+    range.setStart(startNode, 0);
+    range.setEnd(endNode, endNode.length);
+    selection.removeAllRanges();
+    selection.addRange(range);
+};
 
 const wrapSelectionWithStyle = (style, value) => {
     const span = document.createElement('span');
@@ -79,6 +121,7 @@ const wrapSelectionWithStyle = (style, value) => {
       const newRange = document.createRange();
       newRange.selectNodeContents(newNode);
       selection.addRange(newRange);
+      cullElements(passwordArea);
     }
 }
 
@@ -86,7 +129,7 @@ const updateFormattingInfo = () => {
     boldBtn.classList.toggle('active', getStyle('font-weight') === '700');
     italicBtn.classList.toggle('active', getStyle('font-style') === 'italic');
     underlineBtn.classList.toggle('active', getStyle('text-decoration').split(' ').includes('underline'));
-    strikeThroughBtn.classList.toggle('avtive', getStyle('text-decoration').split(' ').includes('line-through'));
+    strikeThroughBtn.classList.toggle('active', getStyle('text-decoration').split(' ').includes('line-through'));
     overlineBtn.classList.toggle('active', getStyle('text-decoration').split(' ').includes('overline'));
 
     setSelectOptionIndex(fontSizeSelect, getStyle('font-size'));
