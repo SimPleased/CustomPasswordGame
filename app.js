@@ -145,16 +145,16 @@ document.documentElement.innerHTML = `
                 <option value=\"Courier New\">Courier New</option>
             </select>
             <select id=\"text-color\" style=\"display: none;\">
-                <option value=\"#ffffff\">White</option>
-                <option value=\"#000000\">Black</option>
-                <option value=\"#a52a2a\">Brown</option>
-                <option value=\"#d2691e\">Chocolate</option>
-                <option value=\"#8b0000\">Dark Red</option>
-                <option value=\"#ff0000\">Red</option>
-                <option value=\"#dc143c\">Crimson</option>
-                <option value=\"#ffa500\">Orange</option>
-                <option value=\"#ffd700\">Gold</option>
-                <option value=\"#ffff00\">Yellow</option>
+                <option value=\"#000000ff\">Black</option>
+                <option value=\"#ffffffff\">White</option>
+                <option value=\"#a52a2aff\">Brown</option>
+                <option value=\"#d2691eff\">Chocolate</option>
+                <option value=\"#8b0000ff\">Dark Red</option>
+                <option value=\"#ff0000ff\">Red</option>
+                <option value=\"#dc143cff\">Crimson</option>
+                <option value=\"#ffa500ff\">Orange</option>
+                <option value=\"#ffd700ff\">Gold</option>
+                <option value=\"#ffff00ff\">Yellow</option>
                 <option value=\"#00ff00ff\">Lime</option>
                 <option value=\"#7cfc00ff\">Lawn Green</option>
                 <option value=\"#008000ff\">Green</option>
@@ -168,10 +168,10 @@ document.documentElement.innerHTML = `
                 <option value=\"#ff00ffff\">Magenta</option>
                 <option value=\"#dda0ddff\">Plum</option>
                 <option value=\"#800080ff\">Purple</option>
-                <option value=\"#00000000\">Transpaerent</option>
+                <option value=\"#00000000\">Transparent</option>
             </select>
             <select id=\"background-color\" style=\"display: none;\">
-                <option value=\"#00000000\">Transpaerent</option>
+                <option value=\"#00000000\">Transparent</option>
                 <option value=\"#ffffffff\">White</option>
                 <option value=\"#000000ff\">Black</option>
                 <option value=\"#a52a2aff\">Brown</option>
@@ -222,28 +222,81 @@ document.addEventListener('keydown', (event) => {
     if (event.ctrlKey) {
         switch (event.key) {
             case 'b':
-                wrapSelectionWithStyle('font-weight', 'bold');
+                applyStyleToSelection('font-weight', 'bold');
                 break;
             case 'i':
-                wrapSelectionWithStyle('font-style', 'italic');
+                applyStyleToSelection('font-style', 'italic');
                 break;
             case 'u':
-                wrapSelectionWithStyle('text-decoration', 'underline');
+                applyStyleToSelection('text-decoration', 'underline');
                 break;
             case 'o':
-                wrapSelectionWithStyle('text-decoration', 'overline');
+                applyStyleToSelection('text-decoration', 'overline');
                 break;
         }
     }
 });
 
+const getComputedStyleRecursively = (element, style, value) => {
+    if (element === passwordArea) return false;
+    if (window.getComputedStyle(element)[style].split(' ').includes(value))
+        return true;
+    
+    return element.parentElement && getComputedStyleRecursively(element.parentElement, style, value);
+}
+
+const isSelectionStyle = (style, value) => {
+    const selection = window.getSelection();
+    if (selection.rangeCount === 0) {
+        console.log(false);
+    }
+    const range = selection.getRangeAt(0);
+    const selectedNodes = range.cloneContents().childNodes;
+    const parentElement = range.commonAncestorContainer.nodeType === Node.TEXT_NODE ?
+        range.commonAncestorContainer.parentElement
+        : range.commonAncestorContainer;
+
+    for (let node of selectedNodes) {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            if (!window
+                .getComputedStyle(
+                    document
+                    .getElementById(
+                        node
+                        .getAttribute('id')
+                ))[style]
+                .split(' ')
+                .includes(value)) {
+                return false
+            }
+        } else if (node.nodeType === Node.TEXT_NODE && node.nodeValue !== '') {
+            if (!window
+                .getComputedStyle(parentElement)[style]
+                .split(' ')
+                .includes(value)) {
+                return false
+            }
+        }
+    }
+
+    return window
+        .getComputedStyle(
+            range.startContainer.nodeType === Node.TEXT_NODE
+            ? range.startContainer.parentElement
+            : range.startContainer
+        )[style]
+        .split(' ')
+        .includes(value);
+}
+
 const getStyle = (style) => {
     const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-        const node = selection.getRangeAt(0).startContainer;
-        const parentNode = node.nodeType === Node.TEXT_NODE ? node.parentNode : node;
-        return window.getComputedStyle(parentNode)[style];
-    }
+    const node = selection.getRangeAt(0).startContainer;
+    return window.getComputedStyle(
+        node.nodeType === Node.TEXT_NODE
+        ? node.parentNode
+        : node
+    )[style];
 }
 
 const setSelectOptionIndex = (selectElement, value) => {
@@ -255,87 +308,174 @@ const setSelectOptionIndex = (selectElement, value) => {
 }
 
 const cullElements = (element) => {
-    const children = [element.childNodes][0];
+    let lastChild = element.childNodes[0];
+    let lastChildsStyleText = '';
     let elementText = '';
 
-    children.forEach(child => {
-        if (child.nodeType === Node.TEXT_NODE) {
-            elementText += child.textContent;
-        } else {
-            cullElements(child)
+    [...element.childNodes].forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            if (node.textContent !== '') {
+                elementText += node.textContent;
+                lastChildsStyleText = '';
+            }
+        } else if (lastChildsStyleText === node.style.cssText && lastChildsStyleText !== '') {
+            mergeSameStyleElements(lastChild, node)
+        } else if (node.nodeType === Node.ELEMENT_NODE && node.innerHTML === '') {
+            node.remove();
+        }
+        else {
+            lastChildsStyleText = node.style.cssText;
+            lastChild = node;
+            cullElements(node)
         }
     });
     
     if (element !== passwordArea && elementText.length === 0) {
         if (element.children.length === 1) {
-            mergeElement(element);
-        } else if (children.length === 0) {
+            mergeChildElement(element);
+        } else if (element.childNodes.length === 0) {
             element.remove()
         }
     }
 }
 
-const mergeElement = (element) => {
-    const child = element.children[0];
-    const childStyles = child.style;
+const mergeSameStyleElements = (element1, element2) => {
+    element1.innerHTML += element2.innerHTML;
 
-    for (let i = 0; i < childStyles.length; i++) {
-        const styleName = childStyles[i];
-        const styleValue = childStyles.getPropertyValue(styleName);
+    const selection = window.getSelection();
+    let range = document.createRange();
+    element2.remove();
+    range.selectNodeContents(element1);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+const mergeChildElement = (element) => {
+    const child = element.children[0];
+
+    [...child.style].forEach(styleName => {
+        const styleValue = child.style.getPropertyValue(styleName);
 
         if (styleValue !== '') {
             if (styleName === 'text-decoration-line' && element.style.textDecorationLine) {
-            const mergedStyleArr = new Set([
-                ...element.style.textDecorationLine.split(' '),
-                ...styleValue.split(' '),
-            ]);
-            element.style.textDecorationLine = Array.from(mergedStyleArr).join(' ');
+                const mergedStyleArr = new Set([
+                    ...element.style.textDecorationLine.split(' '),
+                    ...styleValue.split(' '),
+                ]);
+                element.style.textDecorationLine = Array.from(mergedStyleArr).join(' ');
             } else {
-            element.style[styleName] = styleValue;
+                element.style[styleName] = styleValue;
             }
         }
-    }
+    });
 
     const selection = window.getSelection();
-
-    element.innerHTML = child.innerHTML;
-
     const range = document.createRange();
-    const startNode = element.firstChild;
-    const endNode = element.lastChild;
-    range.setStart(startNode, 0);
-    range.setEnd(endNode, endNode.length);
+    element.innerHTML = child.innerHTML;
+    range.selectNodeContents(element);
     selection.removeAllRanges();
     selection.addRange(range);
 };
 
-const wrapSelectionWithStyle = (style, value) => {
+const applyStyleToSelection = (style, value) => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
     const span = document.createElement('span');
     span.style[style] = value;
 
-    const selection = window.getSelection();
+    const range = selection.getRangeAt(0);
+    const styledNode = span.cloneNode(true);
+    styledNode.appendChild(range.extractContents());
+    styledNode.setAttribute(
+        "id",
+        window.crypto
+            .randomUUID()
+            .toString()
+    );
+    range.insertNode(styledNode);
+
+    selection.removeAllRanges();
+    const newRange = document.createRange();
+    newRange.selectNodeContents(styledNode);
+    selection.addRange(newRange);
+    cullElements(passwordArea);
+};
+
+const splitElementHelper = (element, start, end) => {
+    const split = document.createElement('span');
+    split.style.cssText = element.style.cssText;
+
+    let currentIndex = 0;
+    [element.childNodes][0].forEach(node => {
+        if (node.textContent.length + currentIndex >= end) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                split.innerHTML += node.textContent.slice(
+                    Math.max(start - currentIndex, 0),
+                    Math.min(end - currentIndex, node.textContent.length)
+                );
+            } else {
+                split.innerHTML += splitElement(node, currentIndex, start)[0].innerHTML;
+            }
+            return;
+        }
+
+        if (currentIndex <= start) {
+            currentIndex += node.textContent.length;
+        } else {
+            split.innerHTML += node.innerHTML;
+            currentIndex = start + split.textContent.length;
+        }
+
+        if (currentIndex === end) return;
+    });
+
+    return split;
+}
+
+const splitElement = (element, start, end) => {
+    const splitElement = [];
     
-    if (selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      const newNode = span.cloneNode(true);
-      const fragment = range.extractContents();
-      newNode.appendChild(fragment);
-      range.insertNode(newNode);
-      selection.removeAllRanges();
-      const newRange = document.createRange();
-      newRange.selectNodeContents(newNode);
-      selection.addRange(newRange);
-      cullElements(passwordArea);
+    if (start !== 0) {
+        splitElement.push(
+            splitElementHelper(element, 0, start)
+        );
     }
+
+    if (start !== end) {
+        splitElement.push(
+            splitElementHelper(element, start, end)
+        );
+    }
+    
+    if (end !== element.textContent.length) {
+        splitElement.push(
+            splitElementHelper(element, end, element.textContent.length)
+        );
+    }
+
+    element.replaceWith(...splitElement);
+    return splitElement;
+}
+
+// This fn is currently WIP
+const removeStyleFromSelection = (style, value) => {
+    const selection = window.getSelection();
+    const range = selection.getRangeAt(0);
+    const startingElement = range.startContainer.nodeType === Node.TEXT_NODE
+        ? range.startContainer.parentElement
+        : range.startContainer;
+
+    splitElement(startingElement, range.startOffset, range.endOffset);
 }
 
 const updateFormattingInfo = () => {
-    boldBtn.classList.toggle('active', getStyle('font-weight') === '700');
-    italicBtn.classList.toggle('active', getStyle('font-style') === 'italic');
-    underlineBtn.classList.toggle('active', getStyle('text-decoration').split(' ').includes('underline'));
-    strikeThroughBtn.classList.toggle('active', getStyle('text-decoration').split(' ').includes('line-through'));
-    overlineBtn.classList.toggle('active', getStyle('text-decoration').split(' ').includes('overline'));
-
+    boldBtn.classList.toggle('active', isSelectionStyle('font-weight', '700'));
+    italicBtn.classList.toggle('active', isSelectionStyle('font-style', 'italic'));
+    underlineBtn.classList.toggle('active', isSelectionStyle('text-decoration', 'underline'));
+    strikeThroughBtn.classList.toggle('active', isSelectionStyle('text-decoration', 'line-through'));
+    overlineBtn.classList.toggle('active', isSelectionStyle('text-decoration', 'overline'));
+    
     setSelectOptionIndex(fontSizeSelect, getStyle('font-size'));
 
     // Doesnt work currently maybe later.
@@ -365,64 +505,86 @@ const addBoldInput = () => {
     boldBtn.style.display = 'block';
     showToolbar();
 
-    boldBtn.onclick = () => wrapSelectionWithStyle('font-weight', 'bold');
+    boldBtn.onclick = () => {
+        applyStyleToSelection('font-weight', 'bold');
+        /* This is how all style input functions will work.
+        if ([...boldBtn.classList].includes('active'))
+        {
+            removeStyleFromSelection('font-weight', '700');
+        } else {
+            applyStyleToSelection('font-weight', 'bold');
+        }*/
+    }
 }
 
 const addItalicInput = () => {
     italicBtn.style.display = 'block';
     showToolbar();
 
-    italicBtn.onclick = () => wrapSelectionWithStyle('font-style', 'italic');
+    italicBtn.onclick = () => applyStyleToSelection('font-style', 'italic');
 }
 
 const addUnderlineInput = () => {
     underlineBtn.style.display = 'block';
     showToolbar();
 
-    underlineBtn.onclick = () => wrapSelectionWithStyle('text-decoration', 'underline');
+    underlineBtn.onclick = () => applyStyleToSelection('text-decoration', 'underline');
 }
 
 const addStrikeThroughInput = () => {
     strikeThroughBtn.style.display = 'block';
     showToolbar();
 
-    strikeThroughBtn.onclick = () => wrapSelectionWithStyle('text-decoration', 'line-through');
+    strikeThroughBtn.onclick = () => applyStyleToSelection('text-decoration', 'line-through');
 }
 
 const addOverlineInput = () => {
     overlineBtn.style.display = 'block';
     showToolbar();
 
-    overlineBtn.onclick = () => wrapSelectionWithStyle('text-decoration', 'overline');
+    overlineBtn.onclick = () => applyStyleToSelection('text-decoration', 'overline');
 }
 
 const addFontSizeInput = () => {
     fontSizeSelect.style.display = 'block';
     showToolbar();
 
-    fontSizeSelect.onchange = () => wrapSelectionWithStyle('fontSize', fontSizeSelect.value);
+    fontSizeSelect.onchange = () => applyStyleToSelection('fontSize', fontSizeSelect.value);
 }
 
 const addFontFamilyInput = () => {
     fontFamilySelect.style.display = 'block';
     showToolbar();
 
-    fontFamilySelect.onchange = () => wrapSelectionWithStyle('font-family', fontFamilySelect.value);
+    fontFamilySelect.onchange = () => applyStyleToSelection('font-family', fontFamilySelect.value);
 }
 
 const addTextColorInput = () => {
     textColorSelect.style.display = 'block';
     showToolbar();
 
-    textColorSelect.onchange = () => wrapSelectionWithStyle('color', textColorSelect.value);
+    textColorSelect.onchange = () => applyStyleToSelection('color', textColorSelect.value);
 }
 
 const addBackgroundColorInput = () => {
     backgroundColorSelect.style.display = 'block';
     showToolbar();
 
-    backgroundColorSelect.onchange = () => wrapSelectionWithStyle('background-color', backgroundColorSelect.value);
+    backgroundColorSelect.onchange = () => applyStyleToSelection('background-color', backgroundColorSelect.value);
 }
+
+const getElementsOfStyle = (element) => {
+    
+}
+
+const findMatches = (strings) => {
+    const text = passwordArea.textContent;
+    const regex = new RegExp(strings.join("|"), "g");
+
+    let matches = text.match(regex);
+    return matches;
+}
+
 
 addBoldInput();
 addItalicInput();
@@ -433,3 +595,14 @@ addFontSizeInput();
 addFontFamilyInput();
 addTextColorInput();
 addBackgroundColorInput();
+
+// Not implemented as of yet
+
+const checkRules = (currentRule) => {
+    const rules = [
+        (input) => {
+
+        }
+    ]
+}
+

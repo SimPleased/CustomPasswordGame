@@ -9,5 +9,9 @@
             "matches": ["https://neal.fun/password-game/*"],
             "js": ["app.js"]
         }
-    ]
+    ],
+    "action": {
+        "default_popup": "popup.html",
+        "default_title": "Open Offline Version"
+    }
 }
