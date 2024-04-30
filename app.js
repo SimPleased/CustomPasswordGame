@@ -245,11 +245,10 @@ const getComputedStyleRecursively = (element, style, value) => {
     return element.parentElement && getComputedStyleRecursively(element.parentElement, style, value);
 }
 
+const getElementFromFragment = elementFragment => document.getElementById(elementFragment.getAttribute('id'));
+
 const isSelectionStyle = (style, value) => {
     const selection = window.getSelection();
-    if (selection.rangeCount === 0) {
-        console.log(false);
-    }
     const range = selection.getRangeAt(0);
     const selectedNodes = range.cloneContents().childNodes;
     const parentElement = range.commonAncestorContainer.nodeType === Node.TEXT_NODE ?
@@ -260,11 +259,8 @@ const isSelectionStyle = (style, value) => {
         if (node.nodeType === Node.ELEMENT_NODE) {
             if (!window
                 .getComputedStyle(
-                    document
-                    .getElementById(
-                        node
-                        .getAttribute('id')
-                ))[style]
+                    getElementFromFragment(node)
+                )[style]
                 .split(' ')
                 .includes(value)) {
                 return false
@@ -402,9 +398,18 @@ const applyStyleToSelection = (style, value) => {
     cullElements(passwordArea);
 };
 
+// WIP
+// Currently broken in some cases
+
 const splitElementHelper = (element, start, end) => {
     const split = document.createElement('span');
     split.style.cssText = element.style.cssText;
+    split.setAttribute(
+        "id",
+        window.crypto
+            .randomUUID()
+            .toString()
+    );
 
     let currentIndex = 0;
     [element.childNodes][0].forEach(node => {
@@ -436,6 +441,14 @@ const splitElementHelper = (element, start, end) => {
 const splitElement = (element, start, end) => {
     const splitElement = [];
     
+    if (end > element.textContent.length) throw `The end was greater than the length of the given element.
+    End: ${end}
+    Element length: ${element.textContent.length}`;
+    if (start > end) throw `The end offset was less than the start offset.
+    Start: ${start}
+    End: ${end}`;
+    if (!start && start !== 0) throw `The start was not set properly: ${start}`;
+    
     if (start !== 0) {
         splitElement.push(
             splitElementHelper(element, 0, start)
@@ -459,14 +472,52 @@ const splitElement = (element, start, end) => {
 }
 
 // This fn is currently WIP
+//
+// The only reason it might not work is because
+// of the splitElement() fn.
+//
+// Although the fn seems to be wroking
+
 const removeStyleFromSelection = (style, value) => {
     const selection = window.getSelection();
     const range = selection.getRangeAt(0);
-    const startingElement = range.startContainer.nodeType === Node.TEXT_NODE
-        ? range.startContainer.parentElement
-        : range.startContainer;
+    const selectedElements = range.cloneContents().childNodes;
+    const commonAncestorElement = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
+        ? range.commonAncestorContainer.parentElement
+        : range.commonAncestorContainer;
+    let currentElement;
+    
+    for (let i = 0; i < selectedElements.length; i++) {
+        currentElement = selectedElements[i].nodeType === Node.TEXT_NODE 
+            ? commonAncestorElement
+            : getElementFromFragment(selectedElements[i]);
 
-    splitElement(startingElement, range.startOffset, range.endOffset);
+        if (i === 0) {
+            currentElement = getElementFromFragment(
+                splitElement(
+                    currentElement,
+                    range.startOffset,
+                    Math.min(
+                        range.endOffset,
+                        currentElement.textContent.length
+                    )
+                )[1]
+            );
+        } else if (i === selectedElements.length - 1) {
+            currentElement = getElementFromFragment(
+                splitElement(
+                    currentElement,
+                    0,
+                    Math.min(
+                        range.endOffset,
+                        currentElement.textContent.length
+                    )
+                )[0]
+            );
+        }
+
+        currentElement.style[style] = currentElement.style[style].replace(value, '');
+    }
 }
 
 const updateFormattingInfo = () => {
@@ -506,14 +557,12 @@ const addBoldInput = () => {
     showToolbar();
 
     boldBtn.onclick = () => {
-        applyStyleToSelection('font-weight', 'bold');
-        /* This is how all style input functions will work.
         if ([...boldBtn.classList].includes('active'))
         {
-            removeStyleFromSelection('font-weight', '700');
+            removeStyleFromSelection('font-weight', 'bold');
         } else {
             applyStyleToSelection('font-weight', 'bold');
-        }*/
+        }
     }
 }
 
@@ -521,28 +570,56 @@ const addItalicInput = () => {
     italicBtn.style.display = 'block';
     showToolbar();
 
-    italicBtn.onclick = () => applyStyleToSelection('font-style', 'italic');
+    italicBtn.onclick = () => {
+        if ([...italicBtn.classList].includes('active'))
+        {
+            removeStyleFromSelection('font-style', 'italic');
+        } else {
+            applyStyleToSelection('font-style', 'italic');
+        }
+    }
 }
 
 const addUnderlineInput = () => {
     underlineBtn.style.display = 'block';
     showToolbar();
 
-    underlineBtn.onclick = () => applyStyleToSelection('text-decoration', 'underline');
+    underlineBtn.onclick = () => {
+        if ([...underlineBtn.classList].includes('active'))
+        {
+            removeStyleFromSelection('text-decoration', 'underline');
+        } else {
+            applyStyleToSelection('text-decoration', 'underline');
+        }
+    }
 }
 
 const addStrikeThroughInput = () => {
     strikeThroughBtn.style.display = 'block';
     showToolbar();
 
-    strikeThroughBtn.onclick = () => applyStyleToSelection('text-decoration', 'line-through');
+    strikeThroughBtn.onclick = () => {
+        if ([...underlineBtn.classList].includes('active'))
+        {
+            removeStyleFromSelection('text-decoration', 'line-through');
+        } else {
+            applyStyleToSelection('text-decoration', 'line-through');
+        }
+    }
 }
 
 const addOverlineInput = () => {
     overlineBtn.style.display = 'block';
     showToolbar();
 
-    overlineBtn.onclick = () => applyStyleToSelection('text-decoration', 'overline');
+    overlineBtn.onclick = () => {
+        if ([...underlineBtn.classList].includes('active'))
+        {
+            removeStyleFromSelection('text-decoration', 'overline');
+        } else {
+            applyStyleToSelection('text-decoration', 'overline');
+        }
+    }
 }
 
 const addFontSizeInput = () => {
@@ -573,10 +650,12 @@ const addBackgroundColorInput = () => {
     backgroundColorSelect.onchange = () => applyStyleToSelection('background-color', backgroundColorSelect.value);
 }
 
+// WIP
 const getElementsOfStyle = (element) => {
     
 }
 
+// WIP
 const findMatches = (strings) => {
     const text = passwordArea.textContent;
     const regex = new RegExp(strings.join("|"), "g");
@@ -597,7 +676,6 @@ addTextColorInput();
 addBackgroundColorInput();
 
 // Not implemented as of yet
-
 const checkRules = (currentRule) => {
     const rules = [
         (input) => {
