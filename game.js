@@ -41,15 +41,17 @@ const getComputedStyleRecursively = (element, style, value) => {
     return element.parentElement && getComputedStyleRecursively(element.parentElement, style, value);
 }
 
+const getElementFromNode = node => node.nodeType === Node.TEXT_NODE
+    ? node.parentElement
+    : node;
+
 const getElementFromFragment = elementFragment => document.getElementById(elementFragment.getAttribute('id'));
 
 const isSelectionStyle = (style, value) => {
     const selection = window.getSelection();
     const range = selection.getRangeAt(0);
     const selectedNodes = range.cloneContents().childNodes;
-    const parentElement = range.commonAncestorContainer.nodeType === Node.TEXT_NODE ?
-        range.commonAncestorContainer.parentElement
-        : range.commonAncestorContainer;
+    const parentElement = getElementFromNode(range.commonAncestorContainer);
 
     for (let node of selectedNodes) {
         if (node.nodeType === Node.ELEMENT_NODE) {
@@ -73,9 +75,7 @@ const isSelectionStyle = (style, value) => {
 
     return window
         .getComputedStyle(
-            range.startContainer.nodeType === Node.TEXT_NODE
-            ? range.startContainer.parentElement
-            : range.startContainer
+            getElementFromNode(range.startContainer)
         )[style]
         .split(' ')
         .includes(value);
@@ -85,9 +85,7 @@ const getStyle = (style) => {
     const selection = window.getSelection();
     const node = selection.getRangeAt(0).startContainer;
     return window.getComputedStyle(
-        node.nodeType === Node.TEXT_NODE
-        ? node.parentNode
-        : node
+        getElementFromNode(node)
     )[style];
 }
 
@@ -292,9 +290,7 @@ const removeStyleFromSelection = (style, value) => {
     const selection = window.getSelection();
     const range = selection.getRangeAt(0);
     const selectedElements = range.cloneContents().childNodes;
-    const commonAncestorElement = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
-        ? range.commonAncestorContainer.parentElement
-        : range.commonAncestorContainer;
+    const commonAncestorElement = getElementFromNode(range.commonAncestorContainer);
     let currentElement;
     
     for (let i = 0; i < selectedElements.length; i++) {
