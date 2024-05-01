@@ -195,9 +195,13 @@ const applyStyleToSelection = (style, value) => {
 };
 
 // WIP
-// Currently broken in some cases
+// Currently broken
+//
+// AHHHHHHHHHHHHHH
+// This is so frustating!
+// Just get fixed already!
 
-const splitElementHelper = (element, start, end) => {
+const elementSplitter = (element, start, end) => {
     const split = document.createElement('span');
     split.style.cssText = element.style.cssText;
     split.setAttribute(
@@ -208,25 +212,34 @@ const splitElementHelper = (element, start, end) => {
     );
 
     let currentIndex = 0;
-    [element.childNodes][0].forEach(node => {
+    [...element.childNodes].forEach(node => {
         if (node.textContent.length + currentIndex >= end) {
+            const startOffset = Math.max(start - currentIndex, 0);
+            const endOffeset = Math.min(end - currentIndex, node.textContent.length);
+            
             if (node.nodeType === Node.TEXT_NODE) {
                 split.innerHTML += node.textContent.slice(
-                    Math.max(start - currentIndex, 0),
-                    Math.min(end - currentIndex, node.textContent.length)
+                    startOffset,
+                    endOffeset
                 );
             } else {
-                split.innerHTML += splitElement(node, currentIndex, start)[0].innerHTML;
+                split.appendChild(
+                    elementSplitter(
+                        node,
+                        startOffset,
+                        endOffeset
+                    )
+                );
             }
+            
             return;
         }
 
-        if (currentIndex <= start) {
-            currentIndex += node.textContent.length;
-        } else {
+        if (currentIndex >= start) {
             split.innerHTML += node.innerHTML;
-            currentIndex = start + split.textContent.length;
         }
+            
+        currentIndex = split.textContent.length - 1;
 
         if (currentIndex === end) return;
     });
@@ -272,7 +285,8 @@ const splitElement = (element, start, end) => {
 // The only reason it might not work is because
 // of the splitElement() fn.
 //
-// Although the fn seems to be wroking
+// Although the fn seems like it will work when
+// the elementSplitter() of splitElement() gets fixed.
 
 const removeStyleFromSelection = (style, value) => {
     const selection = window.getSelection();
