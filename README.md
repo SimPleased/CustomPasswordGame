@@ -1,4 +1,6 @@
 # Custom Password Game
+This will probably not recieve more updates, you are welcome to try make a working version with this code. https://github.com/SimPleased/password-game-2
+
 A extension to allow for custom rules for the password game.
 
 If you want to play the regular version of password game just go to `Manage Extensions` and toggle this extension to off.
